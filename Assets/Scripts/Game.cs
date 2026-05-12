@@ -10,7 +10,13 @@ public class Game : MonoBehaviour
     private int _mineCount = 10;
     private Board _board;
     private Cell[,] _state;
+    private bool gameOver;
     private bool _isDebugDraw;
+
+    void OnValidate()
+    {
+        _mineCount = Mathf.Clamp(_mineCount, 0, _rows * _cols);
+    }
     
     void Awake()
     {
@@ -24,10 +30,12 @@ public class Game : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(1)) {
-            Flag();
-        } else if (Input.GetMouseButtonDown(0)) {
-            Reveal();
+        if (!gameOver) {
+            if (Input.GetMouseButtonDown(1)) {
+                Flag();
+            } else if (Input.GetMouseButtonDown(0)) {
+                Reveal();
+            }
         }
         if (Input.GetKeyDown(KeyCode.R)) {
             NewGame();
@@ -99,9 +107,12 @@ public class Game : MonoBehaviour
             if (cell.type == Cell.Type.Mine) {
                 return;
             }
-            if (!cell.flagged) {
+            if (!cell.flagged && !cell.revealed) {
                 cell.revealed = true;
                 _state[r, c] = cell;
+                if (cell.type == Cell.Type.Empty) {
+                    ShowSafe(r, c);
+                }
             }
         }
         Show(-1, -1);
@@ -116,6 +127,7 @@ public class Game : MonoBehaviour
 
     private void Explode(int centerRow, int centerCol)
     {
+        gameOver = true;
         for (int r = 0; r < _rows; r++) {
             for (int c = 0; c < _cols; c++) {
                 var cell = _state[r, c];
@@ -133,6 +145,7 @@ public class Game : MonoBehaviour
 
     public void NewGame()
     {
+        gameOver = false;
         _state = new Cell[_rows, _cols];
         GenerateCells();
         GenerateMines();
